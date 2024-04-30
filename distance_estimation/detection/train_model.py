@@ -15,7 +15,7 @@ def train_model(user_config: UserKittiYoloConfig):
         epochs=user_config.n_epochs,
         patience=user_config.patience,
         mixup=0.1,
-        project=(user_config.experiment_path / "yolov8-kitti-detection"),
+        project=(user_config.experiment_path / "yolov8-kitti-detection").resolve(),
         device=user_config.device,
     )
     print("~~VALIDATION~~")
