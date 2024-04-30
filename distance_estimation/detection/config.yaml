@@ -1,0 +1,6 @@
+use_dont_care_label: False
+test_size: 0.1
+n_epochs: 100
+patience: 10
+experiment_path: experiments/detection
+device: cuda
