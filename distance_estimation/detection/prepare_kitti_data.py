@@ -16,6 +16,7 @@ from tqdm import tqdm
 from distance_estimation.detection.constants import KEY_DONT_CARE, KITTI_CLASSNAME_TO_NUMBER, KITTI_COLUMNS, KITTI_DETECTION_TRAIN_PATH
 from distance_estimation.detection.utils import UserKittiYoloConfig, read_user_config
 
+
 @dataclass
 class KittiTrainConfig:
     dir_path: Path
@@ -216,7 +217,7 @@ def prepare_yolo_data(kitti_config: KittiTrainConfig, user_config: UserKittiYolo
     pairs = list(zip(images, labels))
 
     train_dir_path = (kitti_config.processed_yolo_train_path).resolve()
-    os.makedirs(train_dir_path,exist_ok=True)
+    os.makedirs(train_dir_path, exist_ok=True)
     test_dir_path = (kitti_config.processed_yolo_test_path).resolve()
     os.makedirs(test_dir_path, exist_ok=True)
 

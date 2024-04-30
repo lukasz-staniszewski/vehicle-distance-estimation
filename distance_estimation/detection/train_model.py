@@ -1,7 +1,5 @@
-from pathlib import Path
-
 from ultralytics import YOLO
-
+from pathlib import Path
 from distance_estimation.detection.utils import UserKittiYoloConfig, read_user_config
 
 
@@ -9,15 +7,11 @@ def get_model(user_config: UserKittiYoloConfig) -> YOLO:
     return YOLO((user_config.experiment_path / "model" / "yolov8n.pt").resolve())
 
 
-experiment_path = Path("/net/tscratch/people/plglukaszst/projects/vehicle-distance-estimation/experiments/detection")
-data_path = Path("/net/tscratch/people/plglukaszst/projects/vehicle-distance-estimation/data/detection/processed_yolo/kitti.yaml")
-
-
 def train_model(user_config: UserKittiYoloConfig):
     model = get_model(user_config=user_config)
     print("~~TRAINING~~")
     model.train(
-        data=data_path,
+        data=Path("data/detection/processed_yolo/kitti.yaml").resolve(),
         epochs=user_config.n_epochs,
         patience=user_config.patience,
         mixup=0.1,
