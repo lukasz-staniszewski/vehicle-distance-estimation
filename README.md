@@ -57,3 +57,5 @@ Misc                0.927      0.863      0.914      0.704
 Tram                0.917      0.932      0.967      0.779
 Person_sitting      0.744      0.607      0.754      0.434
 ```
+
+Speed: 2.6ms preprocess, 8.7ms inference, 2.5ms postprocess per image at shape (1, 3, 640, 640)
