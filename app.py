@@ -4,8 +4,9 @@ import streamlit as st
 from PIL import Image
 from ultralytics import YOLO
 
-MODEL_PATH = "/net/tscratch/people/plglukaszst/projects/vehicle-distance-estimation/experiments/detection/yolov8-kitti-detection/train5/weights/best.pt"
-model = YOLO(MODEL_PATH)
+DETECTION_MODEL_PATH = "res/detection/model.pt"
+
+detection_model = YOLO(DETECTION_MODEL_PATH)
 
 
 def load_image(image_file):
@@ -18,7 +19,7 @@ def save_image(image, filename):
 
 
 def process_image(image_path):
-    results = model([image_path])
+    results = detection_model([image_path])
     output_files = []
     for i, result in enumerate(results):
         output_filename = f"result_{i}.jpg"
@@ -27,9 +28,8 @@ def process_image(image_path):
     return output_files
 
 
-st.title("Vehicle Detection App")
-st.write("Upload an image and the YOLO model will detect vehicles in the image.")
-
+st.title("Vehicle detection app")
+st.write("Upload an image and the model will detect objrcts in the image.")
 uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
