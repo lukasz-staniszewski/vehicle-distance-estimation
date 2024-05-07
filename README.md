@@ -1,16 +1,20 @@
-# vehicle-distance-estimation
+# Vehicle Distance Estimation
 
-TWM Projekt
+Team:
 
-## KITTI Object Detection with YOLOV8
+1. Łukasz Staniszewski
+2. Mateusz Szczepanowski
+3. Albert Ściseł
+
+## I. KITTI Object Detection with YOLOV8
 
 ### Data download
 
 1) Download KITTI Detection Dataset from [here](https://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=2d).
 2) Unzip necessary files and put to correct directories:
 
-```
-. (root dir)
+```sh
+. (root directory)
 |-data
     |---detection
         |-----testing
@@ -44,7 +48,7 @@ TWM Projekt
 
 ### Results (val)
 
-```
+```sh
 Class               Box(P          R      mAP50  mAP50-95) 
 ----------------------------------------------------------
 all                 0.887      0.825      0.893      0.668
@@ -59,3 +63,5 @@ Person_sitting      0.744      0.607      0.754      0.434
 ```
 
 Speed: 2.6ms preprocess, 8.7ms inference, 2.5ms postprocess per image at shape (1, 3, 640, 640)
+
+## II. KITTI Metric Depth Prediction with Depth-Anything
