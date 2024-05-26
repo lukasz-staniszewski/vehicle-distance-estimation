@@ -21,9 +21,19 @@ KITTI_COLUMNS = [
     "occluded",
     "alpha",
     "bbox_xmin",
-    "bbox_xmax",
     "bbox_ymin",
+    "bbox_xmax",
     "bbox_ymax",
+    "3d_h",
+    "3d_w",
+    "3d_l",
+    "3d_x",
+    "3d_y",
+    "distance",
+    "rot",
 ]
 
 KITTI_CLASSNAME_TO_NUMBER = {classname: number for number, classname in enumerate(KITTI_CLASS_NAMES)}
+
+KITTI_DEFAULT_SIZE = (1242, 375)
+YOLO_DEFAULT_SIZE = (224, 640)

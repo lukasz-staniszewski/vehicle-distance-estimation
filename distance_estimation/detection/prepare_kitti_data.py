@@ -63,7 +63,7 @@ def get_kitti_train_config(
         }
     )
 
-    config.update({"train_df": pd.DataFrame({"image": config["images"], "label": config["labels"]}).iloc[:, :8]})
+    config.update({"train_df": pd.DataFrame({"image": config["images"], "label": config["labels"]})})
 
     return KittiTrainConfig(**config)
 
@@ -137,7 +137,6 @@ def preprocess_kitti_data(kitti_config: KittiTrainConfig, user_config: UserKitti
         sample_image_path: Path,
         use_dont_care: bool = False,
     ) -> Tuple[List[Tuple[int, float, float, float, float]], str]:
-        labels_names = []
         yolo_labels = []
 
         with open(sample_labels_path) as csv_file:
@@ -152,20 +151,19 @@ def preprocess_kitti_data(kitti_config: KittiTrainConfig, user_config: UserKitti
                     size = get_image_size(path=sample_image_path)
                     bbox = (
                         float(row["bbox_xmin"]),
-                        float(row["bbox_ymin"]),
                         float(row["bbox_xmax"]),
+                        float(row["bbox_ymin"]),
                         float(row["bbox_ymax"]),
                     )
+                    dist = float(row["distance"])
                     yolo_bbox = convert_bbox_to_yolo_format(bbox=bbox, size=size)
-                    yolo_labels.append((class_number,) + yolo_bbox)
-                    labels_names.append(row["label"])
+                    yolo_labels.append((class_number,) + yolo_bbox + (dist,))
 
-        return yolo_labels, labels_names
+        return yolo_labels
 
     if not os.path.exists(kitti_config.processed_kitti_labels_path):
         os.makedirs(kitti_config.processed_kitti_labels_path, exist_ok=True)
 
-    samples_classes: List[str] = []
     samples_img_path: List[str] = []
 
     for dir_path, _, files in os.walk(kitti_config.raw_labels_path):
@@ -175,13 +173,12 @@ def preprocess_kitti_data(kitti_config: KittiTrainConfig, user_config: UserKitti
                 sample_id = get_sample_id(path=sample_label_path)
                 sample_img_path = os.path.join(kitti_config.raw_imgs_path, "{}.png".format(sample_id))
 
-                yolo_labels, classes_names = parse_sample(
+                yolo_labels = parse_sample(
                     sample_labels_path=sample_label_path,
                     sample_image_path=sample_img_path,
                     use_dont_care=user_config.use_dont_care_label,
                 )
 
-                samples_classes.extend(classes_names)
                 samples_img_path.append(sample_img_path)
 
                 with open(
@@ -190,9 +187,9 @@ def preprocess_kitti_data(kitti_config: KittiTrainConfig, user_config: UserKitti
                         "{}.txt".format(sample_id),
                     ),
                     "w",
-                ) as yolo_label_file:
+                ) as kitti_label_file:
                     for lbl in yolo_labels:
-                        yolo_label_file.write("{} {} {} {} {}\n".format(*lbl))
+                        kitti_label_file.write("{} {} {} {} {} {}\n".format(*lbl))
 
     with open(kitti_config.processed_kitti_classes_file_path, "w") as f:
         json.dump(obj=KITTI_CLASSNAME_TO_NUMBER, fp=f)
@@ -209,6 +206,13 @@ def create_yolo_yaml_file(classes: List[str], kitti_config: KittiTrainConfig):
 
 
 def prepare_yolo_data(kitti_config: KittiTrainConfig, user_config: UserKittiYoloConfig):
+    def remove_distance_label(label_path):
+        with open(label_path, "r") as f:
+            lines = f.readlines()
+        with open(label_path, "w") as f:
+            for line in lines:
+                f.write(" ".join(line.split()[:-1]) + "\n")
+
     with open(kitti_config.processed_kitti_classes_file_path, "r") as f:
         classes = json.load(f)
 
@@ -228,6 +232,7 @@ def prepare_yolo_data(kitti_config: KittiTrainConfig, user_config: UserKittiYolo
         target_label_path = train_dir_path / label_path.name
         shutil.copy(image_path, target_image_path)
         shutil.copy(label_path, target_label_path)
+        remove_distance_label(target_label_path)
 
     print("[2/4] YOLO training data processed")
 
@@ -236,6 +241,7 @@ def prepare_yolo_data(kitti_config: KittiTrainConfig, user_config: UserKittiYolo
         target_label_path = test_dir_path / label_path.name
         shutil.copy(image_path, target_image_path)
         shutil.copy(label_path, target_label_path)
+        remove_distance_label(target_label_path)
 
     print("[3/4] YOLO test data processed")
 
