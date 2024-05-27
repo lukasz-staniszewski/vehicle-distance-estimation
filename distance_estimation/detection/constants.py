@@ -9,6 +9,16 @@ KITTI_CLASS_NAMES = [
     "Person_sitting",
     "DontCare",
 ]
+USED_KITTI_CLASS_NAMES = [
+    "Car",
+    "Pedestrian",
+    "Van",
+    "Cyclist",
+    "Truck",
+    "Misc",
+    "Tram",
+    "Person_sitting",
+]
 
 
 KITTI_DETECTION_TRAIN_PATH = "data/detection"
@@ -36,4 +46,4 @@ KITTI_COLUMNS = [
 KITTI_CLASSNAME_TO_NUMBER = {classname: number for number, classname in enumerate(KITTI_CLASS_NAMES)}
 
 KITTI_DEFAULT_SIZE = (1242, 375)
-YOLO_DEFAULT_SIZE = (224, 640)
+YOLO_DEFAULT_SIZE = (640, 640)
