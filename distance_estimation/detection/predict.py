@@ -1,11 +1,10 @@
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 import torch
 from PIL import Image, ImageDraw, ImageFont
-from torchvision import transforms as T
 from ultralytics import YOLO
 
 from distance_estimation.detection.constants import KITTI_CLASS_NAMES
@@ -16,20 +15,16 @@ class Detection:
     xyxy: torch.Tensor
     class_idx: torch.Tensor
     class_name: str
-    # img_size: Tuple[int, int]
 
-    # def resize(self, new_size: Tuple[int, int]) -> None:
-    #     kx = new_size[0] / self.img_size[0]
-    #     ky = new_size[1] / self.img_size[1]
-    #     self.xyxy = self.xyxy * torch.Tensor([kx, ky, kx, ky])
-    #     self.img_size = new_size
+    def get_pixel_height(self) -> torch.Tensor:
+        return self.xyxy[3] - self.xyxy[1]
 
 
 def load_yolo_model(model_path: Path) -> YOLO:
     return YOLO(model=model_path, task="detect")
 
 
-def predict(model: YOLO, model_inp: Path) -> List[Detection]:
+def predict_detection(model: YOLO, model_inp: Path) -> List[Detection]:
     yolo_out = model(model_inp)
 
     dets = []
@@ -43,12 +38,12 @@ def predict(model: YOLO, model_inp: Path) -> List[Detection]:
     return dets
 
 
-def draw_bbox(image: Image.Image, detections: List[Detection]) -> Image.Image:
+def draw_detection_bbox(image: Image.Image, detections: List[Detection]) -> Image.Image:
     drawer = ImageDraw.Draw(image)
     for detection in detections:
         bbox = detection.xyxy.tolist()
         drawer.rectangle(bbox, outline="red", width=3)
-        drawer.text(xy=(bbox[0], bbox[1] - 10), text=detection.class_name, fill="red", font=ImageFont.load_default())
+        drawer.text(xy=(bbox[0], bbox[1] - 10), text=(detection.class_name).upper(), fill="red", font=ImageFont.load_default())
     return image
 
 
@@ -57,11 +52,11 @@ def main(args):
     print("Model loaded...")
     image = Image.open(args.img_path)
     print("Input loaded...")
-    detections: List[Detection] = predict(model=yolo_model, model_inp=args.img_path)
+    detections: List[Detection] = predict_detection(model=yolo_model, model_inp=args.img_path)
     print("Detections performed...")
     print("Detections:", detections)
     if args.out_path:
-        img = draw_bbox(image=image, detections=detections)
+        img = draw_detection_bbox(image=image, detections=detections)
         img.save(args.out_path)
         print(f"Saved to file: {args.out_path}")
 
