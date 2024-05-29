@@ -13,7 +13,7 @@ Team:
 3. Set PYTHONPATH:
 
     ```bash
-    export PYTHONPATH=$PWD
+    export PYTHONPATH=$PWD:$PWD/distance_estimation/depth_prediction/depth_anything
     ```
 
 ## II. Data preprocessing
@@ -130,7 +130,23 @@ python distance_estimation/dummy_distance_prediction/ddp_predict.py -detmp exper
 
 ## V. Depth estimation
 
-TODO
+### Setup
+
+In [dpt.py](distance_estimation/depth_prediction/depth_anything/depth_anything/dpt.py), change lines no. 146-147 to
+
+```python
+if localhub: 
+    self.pretrained = torch.hub.load('distance_estimation/depth_prediction/depth_anything/torchhub/facebookresearch_dinov2_main', 'dinov2_{:}14'.format(encoder), source='local', pretrained=False)
+...
+```
+
+### Relative depth prediction
+
+```bash
+python distance_estimation/depth_prediction/predict_depth_relative.py --img-path data/detection/processed_yolo/train/000004.png --outdir ./
+```
+
+### Metric depth prediction
 
 ## VI. Distance Prediction
 
