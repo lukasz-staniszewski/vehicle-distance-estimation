@@ -1,0 +1,3 @@
+[submodule "distance_estimation/depth_prediction/depth_anything"]
+	path = distance_estimation/depth_prediction/depth_anything
+	url = https://github.com/LiheYoung/Depth-Anything
