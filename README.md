@@ -57,22 +57,22 @@ Team:
 python distance_estimation/detection/train_model.py
 ```
 
-### Example training results (on val set)
+### Training results (test set)
 
 ```sh
 Class               Box(P          R      mAP50  mAP50-95) 
 ----------------------------------------------------------
-all                 0.887      0.825      0.893      0.668
-Car                 0.928      0.918      0.964      0.802
-Pedestrian          0.873      0.699      0.809      0.466
-Van                 0.931      0.909      0.959      0.770
-Cyclist             0.843      0.712      0.796      0.554
-Truck               0.932      0.964      0.984      0.839
-Misc                0.927      0.863      0.914      0.704
-Tram                0.917      0.932      0.967      0.779
-Person_sitting      0.744      0.607      0.754      0.434
+all                 0.866      0.792      0.857      0.614
+Car                 0.931      0.897      0.955      0.773
+Pedestrian          0.863      0.663      0.783      0.449
+Van                 0.901      0.852       0.92      0.726
+Cyclist             0.867      0.744      0.827      0.535
+Truck               0.931      0.921      0.964      0.787
+Misc                0.859      0.737      0.825       0.57
+Tram                0.863      0.948      0.963      0.709
+Person_sitting      0.713      0.572      0.622      0.359
 
-Speed: 2.6ms preprocess, 8.7ms inference, 2.5ms postprocess per image at shape (1, 3, 640, 640)
+Speed: 0.0ms preprocess, 0.5ms inference, 0.0ms loss, 0.6ms postprocess per image
 ```
 
 ### Predict per image
@@ -153,8 +153,43 @@ python distance_estimation/distance_prediction/predict.py -depmn zoedepth -depmp
 
 ![distance example](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/7e380959-6663-48d8-9df6-e33a3c297cd9)
 
+## VII. Benchmark results
+
+### General
+
+| Type                        | Macro MAE | Micro MAE | Large MAE | Medium MAE | Small MAE |
+|-----------------------------|-----------|-----------|-----------|------------|-----------|
+| Dummy distance prediction   | 3.655     | 2.395     | 1.555     | **2.421**      | 4.625     |
+| Depth (centered min)        | 5.813     | 4.455     | 2.681     | 5.367      | 5.347     |
+| Depth (centered mean)       | 3.683     | 2.588     | 1.641     | 2.940      | 3.666     |
+| Depth (centered median)     | **3.578**     | 2.550     | 1.577     | 2.925      | 3.600     |
+| Depth (centered percentile) | 4.266     | 3.225     | 1.958     | 3.823      | 4.104     |
+| Depth (bbox min)            | 8.141     | 6.385     | 3.542     | 7.745      | 8.268     |
+| Depth (bbox median)         | 3.605     | **2.284**     | **1.315**     | 2.616      | **3.512**     |
+| Depth (bbox mean)           | 4.412     | 2.957     | 1.943     | 3.325      | 4.149     |
+| Depth (bbox percentile)     | 4.869     | 3.565     | 2.094     | 4.265      | 4.553     |
+
+### Per class
+
+| Type                        | Car MAE | Cyclist MAE | Misc MAE | Pedestrian MAE | Person sitting MAE | Tram MAE | Truck MAE | Van MAE |
+|-----------------------------|---------|-------------|----------|-----------------|--------------------|----------|-----------|---------|
+| Dummy distance prediction   | 1.953   | 1.163       | 9.350    | **0.923**           | 1.024              | **3.723**    | 6.491     | 4.610   |
+| Depth (centered min)        | 4.025   | **1.054**       | 5.100    | 1.270           | 1.266              | 15.214   | 11.033    | 7.544   |
+| Depth (centered mean)       | 2.280   | 1.710       | 3.131    | 1.178           | 0.818              | 9.701    | 6.650     | 3.993   |
+| Depth (centered median)     | 2.270   | 1.322       | 3.195    | 1.170           | **0.795**              | 9.578    | 6.456     | 3.840   |
+| Depth (centered percentile) | 2.908   | 1.108       | 3.712    | 1.170           | 0.938              | 11.202   | 7.817     | 5.273   |
+| Depth (bbox min)            | 5.849   | 1.677       | 7.575    | 1.536           | 1.552              | 20.785   | 15.996    | 10.161  |
+| Depth (bbox median)         | **1.941**   | 2.279       | **3.089**    | 1.435           | 0.852              | 9.734    | 6.237     | **3.272**   |
+| Depth (bbox mean)           | 2.553   | 5.867       | 3.226    | 3.123           | 1.447              | 9.538    | **6.136**     | 3.410   |
+| Depth (bbox percentile)     | 3.184   | 1.258       | 4.032    | 1.207           | 1.125              | 13.098   | 9.207     | 5.844   |
+
+### Speed
+
+Dummy distance prediction mean inference speed: 47.36 frames per second
+
+Depth distance prediction mean inference speed: 7.50 frames per second
+
 ## TODO
 
-1) Split Train/Valid/Test for benchmarking + benchmarking
-2) Train ZoeDepth on Kitti for metric depth with Small encoder (faster model)
-3) Make depth prediction working with streamlit app
+1) Train ZoeDepth on Kitti for metric depth with Small encoder (faster model) and do benchmarks
+2) Make depth prediction working with streamlit app
