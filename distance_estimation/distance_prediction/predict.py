@@ -31,10 +31,10 @@ class DistancePredictor:
             return np.array(depth_mask)
 
         with ThreadPoolExecutor(max_workers=2) as executor:
-            detections: List[Detection] = executor.submit(_get_detections, self.detection_model, image)
-            depth_array: np.ndarray = executor.submit(_get_depth_mask, self.depth_model, image)
-            detections.result()
-            depth_array.result()
+            detections_future = executor.submit(_get_detections, self.detection_model, image)
+            depth_array_future = executor.submit(_get_depth_mask, self.depth_model, image)
+            detections: List[Detection] = detections_future.result()
+            depth_array: np.ndarray = depth_array_future.result()
 
         return [
             DistanceDetection(**asdict(detection), distance=bbox_depth(depth_array, detection.xyxy, self.strategy))
