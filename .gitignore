@@ -165,3 +165,4 @@ runs/**
 res/detection/model.pt
 res/samples/*
 !res/samples/.gitkeep
+checkpoints/*.pt*

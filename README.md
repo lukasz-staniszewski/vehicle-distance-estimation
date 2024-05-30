@@ -13,7 +13,7 @@ Team:
 3. Set PYTHONPATH:
 
     ```bash
-    export PYTHONPATH=$PWD:$PWD/distance_estimation/depth_prediction/depth_anything
+    export PYTHONPATH=$PWD:$PWD/distance_estimation/depth_prediction/depth_anything:$PWD/distance_estimation/depth_prediction/depth_anything/metric_depth
     ```
 
 ## II. Data preprocessing
@@ -43,13 +43,7 @@ Team:
 
 1) Go to root directory (vehicle-distance-estimation/)
 
-2) Set env:
-
-    ```sh
-    export PYTHONPATH=$PWD
-    ```
-
-3) Run data preprocessing:
+2) Run data preprocessing:
 
     ```sh
     python distance_estimation/detection/prepare_kitti_data.py
@@ -132,7 +126,15 @@ python distance_estimation/dummy_distance_prediction/ddp_predict.py -detmp exper
 
 ### Setup
 
-In [dpt.py](distance_estimation/depth_prediction/depth_anything/depth_anything/dpt.py), change lines no. 146-147 to
+Download models to [checkpoints dir](checkpoints/):
+
+```bash
+wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpoints/depth_anything_vitl14.pth
+
+wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpoints_metric_depth/depth_anything_metric_depth_outdoor.pt
+```
+
+In [depth-anything dpt.py](distance_estimation/depth_prediction/depth_anything/depth_anything/dpt.py), change lines no. 146-147 to
 
 ```python
 if localhub: 
@@ -140,14 +142,25 @@ if localhub:
 ...
 ```
 
+In [zoedepth dpt.py](distance_estimation/depth_prediction/depth_anything/metric_depth/zoedepth/models/base_models/dpt_dinov2/dpt.py), change line no. 140 to
+
+```python
+self.pretrained = torch.hub.load('distance_estimation/depth_prediction/depth_anything/torchhub/facebookresearch_dinov2_main', 'dinov2_{:}14'.format(encoder), source='local', pretrained=False)
+...
+```
+
 ### Relative depth prediction
 
 ```bash
-python distance_estimation/depth_prediction/predict_depth_relative.py --img-path data/detection/processed_yolo/train/000004.png --outdir ./
+python distance_estimation/depth_prediction/predict_depth_relative.py --img-path data/detection/processed_yolo/train/000003.png --outdir ./
 ```
 
 ### Metric depth prediction
 
-## VI. Distance Prediction
+```bash
+python distance_estimation/depth_prediction/predict_depth_metric.py --img-in data/detection/processed_yolo/train/000003.png -p local::./checkpoints/depth_anything_metric_depth_outdoor.pt
+```
+
+## VI. Distance Prediction (Object detection + depth estimation)
 
 TODO

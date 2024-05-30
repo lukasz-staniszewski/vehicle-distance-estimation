@@ -6,7 +6,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose
-from tqdm import tqdm
 
 from distance_estimation.depth_prediction.depth_anything.depth_anything.dpt import DepthAnything
 from distance_estimation.depth_prediction.depth_anything.depth_anything.util.transform import NormalizeImage, PrepareForNet, Resize
@@ -31,11 +30,11 @@ torch_tf = Compose(
 
 
 def load_model():
-    return DepthAnything.from_pretrained("LiheYoung/depth_anything_vits14").to(DEVICE).eval()
+    return DepthAnything.from_pretrained("LiheYoung/depth_anything_vitl14").to(DEVICE).eval()
 
 
 def path2tensor(path):
-    raw_image = cv2.imread(filename)
+    raw_image = cv2.imread(path)
     image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB) / 255.0
 
     h, w = image.shape[:2]
@@ -45,40 +44,34 @@ def path2tensor(path):
     return image, h, w
 
 
+def predict(model, image, w, h):
+    with torch.no_grad():
+        depth = model(image)
+
+    depth = F.interpolate(depth[None], (h, w), mode="bilinear", align_corners=False)[0, 0]
+
+
+def save_predict(depth, in_filename, outdir):
+    os.makedirs(outdir, exist_ok=True)
+    depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
+    depth = depth.numpy().astype(np.uint8)
+    depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
+
+    filename = os.path.basename(in_filename)
+    cv2.imwrite(os.path.join(outdir, filename[: filename.rfind(".")] + "_depth.png"), depth)
+
+
+def main(args):
+    depth_anything = load_model()
+    image, h, w = path2tensor(args.img_path)
+    depth = predict(depth_anything, image, w, h)
+    save_predict(depth, args.img_path, args.outdir)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--img-path", type=str)
     parser.add_argument("--outdir", type=str, default="./vis_depth")
 
     args = parser.parse_args()
-
-    depth_anything = load_model()
-
-    if os.path.isfile(args.img_path):
-        filenames = [args.img_path]
-    else:
-        filenames = os.listdir(args.img_path)
-        filenames = [os.path.join(args.img_path, filename) for filename in filenames if not filename.startswith(".")]
-        filenames.sort()
-    os.makedirs(args.outdir, exist_ok=True)
-
-    preds = []
-    for filename in tqdm(filenames):
-        image, h, w = path2tensor(filename)
-
-        with torch.no_grad():
-            depth = depth_anything(image)
-
-        depth = F.interpolate(depth[None], (h, w), mode="bilinear", align_corners=False)[0, 0]
-        preds.append(depth.cpu())
-
-    for pred in preds:
-        pred = (pred - pred.min()) / (pred.max() - pred.min()) * 255.0
-
-        pred = pred.numpy().astype(np.uint8)
-
-        pred = np.repeat(pred[..., np.newaxis], 3, axis=-1)
-
-        filename = os.path.basename(filename)
-
-        cv2.imwrite(os.path.join(args.outdir, filename[: filename.rfind(".")] + "_depth.png"), pred)
+    main(args)
