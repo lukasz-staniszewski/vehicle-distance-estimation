@@ -81,8 +81,6 @@ Speed: 2.6ms preprocess, 8.7ms inference, 2.5ms postprocess per image at shape (
 python distance_estimation/detection/predict.py -mp experiments/detection/yolov8-kitti-detection/train/weights/best.pt  -ip data/detection/testing/image_2/000033.png  -op detect_000033.png
 ```
 
-### Example output image
-
 ![yolo_out](https://github.com/lukasz-staniszewski/focus-convolutional-neural-network/assets/59453698/53627712-99a2-454c-aab1-b54108b9d7b8)
 
 ## IV. Dummy Distance Prediction (from Bounding-Boxes)
@@ -118,9 +116,7 @@ Micro Mean Absolute Error on valid: 2.5149 m
 python distance_estimation/dummy_distance_prediction/ddp_predict.py -detmp experiments/detection/yolov8-kitti-detection/train/weights/best.pt -ddpmp distance_estimation/dummy_distance_prediction/model.json  -ip data/detection/testing/image_2/000033.png  -op detect_dist_000033.png
 ```
 
-### Example image
-
-![ddp_out](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/bc2b806d-0702-477e-88bb-ab2fa8d926fc)
+![dummy distance example](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/cf092a6b-ad4e-40d6-a570-4ab955aa8c78)
 
 ## V. Depth estimation
 
@@ -152,15 +148,28 @@ self.pretrained = torch.hub.load('distance_estimation/depth_prediction/depth_any
 ### Relative depth prediction
 
 ```bash
-python distance_estimation/depth_prediction/predict_depth_relative.py --img-path data/detection/processed_yolo/train/000003.png --outdir ./
+python distance_estimation/depth_prediction/predict_depth_relative.py --img-path data/detection/training/image_2/000003.png  --outdir ./
 ```
 
 ### Metric depth prediction
 
 ```bash
-python distance_estimation/depth_prediction/predict_depth_metric.py --img-in data/detection/processed_yolo/train/000003.png -p local::./checkpoints/depth_anything_metric_depth_outdoor.pt
+python distance_estimation/depth_prediction/predict_depth_metric.py --img-in data/detection/training/image_2/000003.png -p local::./checkpoints/depth_anything_metric_depth_outdoor.pt
 ```
 
 ## VI. Distance Prediction (Object detection + depth estimation)
 
-TODO
+Run sample prediction:
+
+```bash
+python distance_estimation/distance_prediction/predict.py -depmn zoedepth -depmp local::./checkpoints/depth_anything_metric_depth_outdoor.pt -detmp experiments/detection/yolov8-kitti-detection/train/weights/best.pt -s center_min -ip data/detection/training/image_2/000003.png -op dist.png
+```
+
+![distance example](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/7e380959-6663-48d8-9df6-e33a3c297cd9)
+
+## TODO
+
+1) Split Train/Valid/Test for benchmarking + benchmarking
+2) Make YOLO work by inputing PIL Image (instead of image path)
+3) Train ZoeDepth on Kitti for metric depth with Small encoder (faster speed)
+4) Make depth prediction working with streamlit app

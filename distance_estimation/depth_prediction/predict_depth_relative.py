@@ -49,6 +49,7 @@ def predict(model, image, w, h):
         depth = model(image)
 
     depth = F.interpolate(depth[None], (h, w), mode="bilinear", align_corners=False)[0, 0]
+    return depth.cpu()
 
 
 def save_predict(depth, in_filename, outdir):

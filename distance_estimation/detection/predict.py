@@ -25,7 +25,7 @@ def load_yolo_model(model_path: Path) -> YOLO:
 
 
 def predict_detection(model: YOLO, model_inp: Path) -> List[Detection]:
-    yolo_out = model(model_inp)
+    yolo_out = model(model_inp, verbose=False)
 
     dets = []
     img_detection = yolo_out[0].cpu()

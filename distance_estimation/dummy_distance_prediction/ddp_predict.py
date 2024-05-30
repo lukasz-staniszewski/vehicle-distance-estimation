@@ -1,20 +1,15 @@
 import json
 from argparse import ArgumentParser
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, List
 
-import torch
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 from ultralytics import YOLO
 
 from distance_estimation.detection.predict import Detection, load_yolo_model, predict_detection
+from distance_estimation.distance_prediction.helpers import DistanceDetection, draw_dist_detection_bbox
 from distance_estimation.dummy_distance_prediction.ddp_prepare import get_focal_length
-
-
-@dataclass
-class DistanceDetection(Detection):
-    distance: torch.Tensor
 
 
 class DummyDistancePredictor:
@@ -32,17 +27,6 @@ class DummyDistancePredictor:
     def load(cls, model_path: Path) -> "DummyDistancePredictor":
         model = json.load(open(model_path, "rb"))
         return cls(model=model)
-
-
-def draw_dist_detection_bbox(image: Image.Image, detections: List[DistanceDetection]) -> Image.Image:
-    drawer = ImageDraw.Draw(image)
-    font = ImageFont.load_default(size=15)
-    for detection in detections:
-        bbox = detection.xyxy.tolist()
-        drawer.rectangle(bbox, outline="red", width=3)
-        text_on_bbox = f"{(detection.class_name).upper()}: {detection.distance:.02f} m"
-        drawer.text(xy=(bbox[0], bbox[1] - 20), text=text_on_bbox, fill="red", font=font)
-    return image
 
 
 def predict_dummy_distance_prediction(ddp_model: DummyDistancePredictor, yolo_model: YOLO, model_inp: Path) -> List[DistanceDetection]:
