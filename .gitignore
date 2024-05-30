@@ -165,3 +165,6 @@ runs/**
 res/detection/model.pt
 res/samples/*
 !res/samples/.gitkeep
+checkpoints/*.pt*
+!distance_estimation/depth_prediction/depth_anything/metric_depth/zoedepth/data/
+!distance_estimation/depth_prediction/depth_anything/torchhub/facebookresearch_dinov2_main/dinov2/data

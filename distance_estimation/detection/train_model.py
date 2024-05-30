@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import onnx
 from ultralytics import YOLO
 
 from distance_estimation.detection.utils import UserKittiYoloConfig, read_user_config
@@ -8,13 +7,6 @@ from distance_estimation.detection.utils import UserKittiYoloConfig, read_user_c
 
 def get_model(user_config: UserKittiYoloConfig) -> YOLO:
     return YOLO((user_config.experiment_path / "model" / "yolov8n.pt").resolve())
-
-
-def export_model(yolo_model: YOLO):
-    out_model_path = yolo_model.export(format="onnx", dynamic=True)
-    onnx_model = onnx.load(out_model_path)
-    onnx.checker.check_model(onnx_model)
-    print(f"Model saved to path: {out_model_path}")
 
 
 def train_model(user_config: UserKittiYoloConfig):
@@ -28,11 +20,8 @@ def train_model(user_config: UserKittiYoloConfig):
         project=(user_config.experiment_path / "yolov8-kitti-detection").resolve(),
         device=user_config.device,
     )
-    print("Starting validation...")
-    model.val()
-
-    print("Exporting...")
-    export_model(yolo_model=model)
+    print("Testing...")
+    model.val(split="test", plots=True)
 
 
 def main():
