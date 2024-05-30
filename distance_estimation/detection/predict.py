@@ -24,7 +24,7 @@ def load_yolo_model(model_path: Path) -> YOLO:
     return YOLO(model=model_path, task="detect")
 
 
-def predict_detection(model: YOLO, model_inp: Path) -> List[Detection]:
+def predict_detection(model: YOLO, model_inp: Image.Image) -> List[Detection]:
     yolo_out = model(model_inp, verbose=False)
 
     dets = []
@@ -52,7 +52,7 @@ def main(args):
     print("Model loaded...")
     image = Image.open(args.img_path)
     print("Input loaded...")
-    detections: List[Detection] = predict_detection(model=yolo_model, model_inp=args.img_path)
+    detections: List[Detection] = predict_detection(model=yolo_model, model_inp=image)
     print("Detections performed...")
     print("Detections:", detections)
     if args.out_path:

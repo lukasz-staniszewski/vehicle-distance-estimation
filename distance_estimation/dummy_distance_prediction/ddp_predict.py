@@ -29,9 +29,10 @@ class DummyDistancePredictor:
         return cls(model=model)
 
 
-def predict_dummy_distance_prediction(ddp_model: DummyDistancePredictor, yolo_model: YOLO, model_inp: Path) -> List[DistanceDetection]:
+def predict_dummy_distance_prediction(
+    ddp_model: DummyDistancePredictor, yolo_model: YOLO, model_inp: Image.Image, focal_length: float
+) -> List[DistanceDetection]:
     detections: List[Detection] = predict_detection(model=yolo_model, model_inp=model_inp)
-    focal_length: float = get_focal_length(img_path=model_inp)
     distance_detections = [ddp_model.predict(detection=detection, focal_length=focal_length) for detection in detections]
     return distance_detections
 
@@ -42,8 +43,10 @@ def main(args):
     print("Models loaded...")
 
     image = Image.open(args.img_path)
+    focal_length: float = get_focal_length(img_path=args.img_path)
+
     detections: List[DistanceDetection] = predict_dummy_distance_prediction(
-        ddp_model=ddp_model, yolo_model=yolo_model, model_inp=args.img_path
+        ddp_model=ddp_model, yolo_model=yolo_model, model_inp=image, focal_length=focal_length
     )
     print("Detections performed...")
 

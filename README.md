@@ -169,7 +169,7 @@ python distance_estimation/distance_prediction/predict.py -depmn zoedepth -depmp
 
 ## TODO
 
-1) Split Train/Valid/Test for benchmarking + benchmarking
-2) Make YOLO work by inputing PIL Image (instead of image path)
+1) Remove depth anything as submodule
+2) Split Train/Valid/Test for benchmarking + benchmarking
 3) Train ZoeDepth on Kitti for metric depth with Small encoder (faster speed)
 4) Make depth prediction working with streamlit app

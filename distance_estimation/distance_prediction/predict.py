@@ -21,10 +21,8 @@ class DistancePredictor:
         self.depth_model = depth_model
         self.strategy = strategy
 
-    def predict(self, image_path: Path) -> List[DistanceDetection]:
-        image = Image.open(image_path)
-
-        detections: List[Detection] = predict_detection(model=self.detection_model, model_inp=image_path)
+    def predict(self, image: Image.Image) -> List[DistanceDetection]:
+        detections: List[Detection] = predict_detection(model=self.detection_model, model_inp=image)
         depth_mask = process_image(model=self.depth_model, image=image)
         depth_array = np.array(depth_mask)
 
@@ -47,9 +45,10 @@ def main(args):
         detection_model_path=args.detection_model_path,
         strategy=args.strategy,
     )
+    image = Image.open(args.img_path)
     print("Models loaded...")
 
-    detections = predictor.predict(image_path=args.img_path)
+    detections = predictor.predict(image=image)
     print("Detections performed...")
 
     print("Detections:", detections)
