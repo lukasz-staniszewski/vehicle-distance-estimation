@@ -130,21 +130,6 @@ wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpo
 wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpoints_metric_depth/depth_anything_metric_depth_outdoor.pt
 ```
 
-In [depth-anything dpt.py](distance_estimation/depth_prediction/depth_anything/depth_anything/dpt.py), change lines no. 146-147 to
-
-```python
-if localhub: 
-    self.pretrained = torch.hub.load('distance_estimation/depth_prediction/depth_anything/torchhub/facebookresearch_dinov2_main', 'dinov2_{:}14'.format(encoder), source='local', pretrained=False)
-...
-```
-
-In [zoedepth dpt.py](distance_estimation/depth_prediction/depth_anything/metric_depth/zoedepth/models/base_models/dpt_dinov2/dpt.py), change line no. 140 to
-
-```python
-self.pretrained = torch.hub.load('distance_estimation/depth_prediction/depth_anything/torchhub/facebookresearch_dinov2_main', 'dinov2_{:}14'.format(encoder), source='local', pretrained=False)
-...
-```
-
 ### Relative depth prediction
 
 ```bash
@@ -169,7 +154,6 @@ python distance_estimation/distance_prediction/predict.py -depmn zoedepth -depmp
 
 ## TODO
 
-1) Remove depth anything as submodule
-2) Split Train/Valid/Test for benchmarking + benchmarking
-3) Train ZoeDepth on Kitti for metric depth with Small encoder (faster speed)
-4) Make depth prediction working with streamlit app
+1) Split Train/Valid/Test for benchmarking + benchmarking
+2) Train ZoeDepth on Kitti for metric depth with Small encoder (faster model)
+3) Make depth prediction working with streamlit app
