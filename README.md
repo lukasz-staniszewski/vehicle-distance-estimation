@@ -96,18 +96,19 @@ python distance_estimation/dummy_distance_prediction/ddp_prepare.py
 Metric is mean absolute error (in meters).
 
 ```bash
-Mean Absolute Errors for each class on valid:
-Car: 2.1339 m
-Pedestrian: 0.9445 m
-Van: 5.0367 m
-Cyclist: 1.2596 m
-Truck: 6.0686 m
-Misc: 10.9674 m
-Tram: 4.0327 m
-Person_sitting: 1.2417 m
+On testing validation...
+Mean Absolute Errors for each class:
+Car: 2.1666 m
+Pedestrian: 1.0545 m
+Van: 4.6537 m
+Cyclist: 1.1866 m
+Truck: 6.4670 m
+Misc: 10.6080 m
+Tram: 3.6167 m
+Person_sitting: 1.4412 m
 
-Macro Mean Absolute Error on valid: 3.9606 m
-Micro Mean Absolute Error on valid: 2.5149 m
+Macro Mean Absolute Error: 3.8993 m
+Micro Mean Absolute Error: 2.4889 m
 ```
 
 ### Example prediction

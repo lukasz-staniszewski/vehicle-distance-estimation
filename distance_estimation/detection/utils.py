@@ -9,6 +9,7 @@ import yaml
 class UserKittiYoloConfig:
     use_dont_care_label: bool
     test_size: float
+    val_size: float
     n_epochs: int
     patience: int
     experiment_path: str

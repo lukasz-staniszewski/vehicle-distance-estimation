@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
 from typing import List
@@ -22,9 +23,18 @@ class DistancePredictor:
         self.strategy = strategy
 
     def predict(self, image: Image.Image) -> List[DistanceDetection]:
-        detections: List[Detection] = predict_detection(model=self.detection_model, model_inp=image)
-        depth_mask = process_image(model=self.depth_model, image=image)
-        depth_array = np.array(depth_mask)
+        def _get_detections(model, image):
+            return predict_detection(model=model, model_inp=image)
+
+        def _get_depth_mask(model, image):
+            depth_mask = process_image(model=model, image=image)
+            return np.array(depth_mask)
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            detections: List[Detection] = executor.submit(_get_detections, self.detection_model, image)
+            depth_array: np.ndarray = executor.submit(_get_depth_mask, self.depth_model, image)
+            detections.result()
+            depth_array.result()
 
         return [
             DistanceDetection(**asdict(detection), distance=bbox_depth(depth_array, detection.xyxy, self.strategy))

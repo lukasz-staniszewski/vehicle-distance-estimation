@@ -24,10 +24,13 @@ class KittiTrainConfig:
     processed_yolo_dir_path: Path
     raw_imgs_path: Path
     raw_labels_path: Path
-    processed_kitti_labels_path: Path
+    raw_calib_path: Path
+    processed_kitti_labels_train_path: Path
+    processed_kitti_labels_test_path: Path
     processed_kitti_classes_file_path: Path
     processed_yolo_train_path: Path
     processed_yolo_test_path: Path
+    processed_yolo_valid_path: Path
     processed_yolo_config_file_path: Path
     images: list
     labels: list
@@ -48,10 +51,13 @@ def get_kitti_train_config(
         "processed_yolo_dir_path": processed_yolo_dir_path,
         "raw_imgs_path": dir_path / "training" / "image_2",
         "raw_labels_path": dir_path / "training" / "label_2",
-        "processed_kitti_labels_path": processed_kitti_dir_path / "labels",
+        "raw_calib_path": dir_path / "training" / "calib",
+        "processed_kitti_labels_train_path": processed_kitti_dir_path / "labels_train",
+        "processed_kitti_labels_test_path": processed_kitti_dir_path / "labels_test",
         "processed_kitti_classes_file_path": processed_kitti_dir_path / "classes.json",
         "processed_yolo_train_path": processed_yolo_dir_path / "train",
         "processed_yolo_test_path": processed_yolo_dir_path / "test",
+        "processed_yolo_valid_path": processed_yolo_dir_path / "valid",
         "processed_yolo_config_file_path": processed_yolo_dir_path / "kitti.yaml",
     }
 
@@ -161,48 +167,41 @@ def preprocess_kitti_data(kitti_config: KittiTrainConfig, user_config: UserKitti
 
         return yolo_labels
 
-    if not os.path.exists(kitti_config.processed_kitti_labels_path):
-        os.makedirs(kitti_config.processed_kitti_labels_path, exist_ok=True)
+    if not os.path.exists(kitti_config.processed_kitti_labels_train_path):
+        os.makedirs(kitti_config.processed_kitti_labels_train_path, exist_ok=True)
+    if not os.path.exists(kitti_config.processed_kitti_labels_test_path):
+        os.makedirs(kitti_config.processed_kitti_labels_test_path, exist_ok=True)
 
-    samples_img_path: List[str] = []
+    train_images = sorted(list((kitti_config.dir_path / "train" / "image_2").glob("*")))
+    test_images = sorted(list((kitti_config.dir_path / "test" / "image_2").glob("*")))
+    train_labels = sorted(list((kitti_config.dir_path / "train" / "label_2").glob("*")))
+    test_labels = sorted(list((kitti_config.dir_path / "test" / "label_2").glob("*")))
 
-    for dir_path, _, files in os.walk(kitti_config.raw_labels_path):
-        for file_name in tqdm(files, desc="Generating labels..."):
-            if file_name.endswith(".txt"):
-                sample_label_path = os.path.join(dir_path, file_name)
-                sample_id = get_sample_id(path=sample_label_path)
-                sample_img_path = os.path.join(kitti_config.raw_imgs_path, "{}.png".format(sample_id))
+    for img_list, lbl_list, lbl_output_dir in [
+        (train_images, train_labels, kitti_config.processed_kitti_labels_train_path),
+        (test_images, test_labels, kitti_config.processed_kitti_labels_test_path),
+    ]:
+        for img_path, lbl_path in tqdm(zip(img_list, lbl_list), desc="Generating labels...", total=len(img_list)):
+            sample_id = get_sample_id(path=lbl_path)
+            yolo_labels = parse_sample(
+                sample_labels_path=lbl_path,
+                sample_image_path=img_path,
+                use_dont_care=user_config.use_dont_care_label,
+            )
 
-                yolo_labels = parse_sample(
-                    sample_labels_path=sample_label_path,
-                    sample_image_path=sample_img_path,
-                    use_dont_care=user_config.use_dont_care_label,
-                )
-
-                samples_img_path.append(sample_img_path)
-
-                with open(
-                    os.path.join(
-                        kitti_config.processed_kitti_labels_path,
-                        "{}.txt".format(sample_id),
-                    ),
-                    "w",
-                ) as kitti_label_file:
-                    for lbl in yolo_labels:
-                        kitti_label_file.write("{} {} {} {} {} {}\n".format(*lbl))
+            with open(
+                os.path.join(
+                    lbl_output_dir,
+                    "{}.txt".format(sample_id),
+                ),
+                "w",
+            ) as kitti_label_file:
+                for lbl in yolo_labels:
+                    kitti_label_file.write("{} {} {} {} {} {}\n".format(*lbl))
 
     with open(kitti_config.processed_kitti_classes_file_path, "w") as f:
         json.dump(obj=KITTI_CLASSNAME_TO_NUMBER, fp=f)
-    print("[1/4] Kitti data preprocessed")
-
-
-def create_yolo_yaml_file(classes: List[str], kitti_config: KittiTrainConfig):
-    yaml_file = "names:\n"
-    yaml_file += "\n".join(f"- {c}" for c in classes)
-    yaml_file += f"\nnc: {len(classes)}"
-    yaml_file += f"\ntrain: train\nval: test"
-    with open(kitti_config.processed_yolo_config_file_path, "w") as f:
-        f.write(yaml_file)
+    print("[2/6] Kitti data preprocessed")
 
 
 def prepare_yolo_data(kitti_config: KittiTrainConfig, user_config: UserKittiYoloConfig):
@@ -216,43 +215,96 @@ def prepare_yolo_data(kitti_config: KittiTrainConfig, user_config: UserKittiYolo
     with open(kitti_config.processed_kitti_classes_file_path, "r") as f:
         classes = json.load(f)
 
-    images = sorted(list(kitti_config.raw_imgs_path.glob("*")))
-    labels = sorted(list(kitti_config.processed_kitti_labels_path.glob("*")))
-    pairs = list(zip(images, labels))
+    train_images = sorted(list((kitti_config.dir_path / "train" / "image_2").glob("*")))
+    test_images = sorted(list((kitti_config.dir_path / "test" / "image_2").glob("*")))
+    train_labels = sorted(list((kitti_config.processed_kitti_labels_train_path).glob("*")))
+    test_labels = sorted(list((kitti_config.processed_kitti_labels_test_path).glob("*")))
 
-    train_dir_path = (kitti_config.processed_yolo_train_path).resolve()
-    os.makedirs(train_dir_path, exist_ok=True)
-    test_dir_path = (kitti_config.processed_yolo_test_path).resolve()
-    os.makedirs(test_dir_path, exist_ok=True)
+    train_pairs = list(zip(train_images, train_labels))
+    test_pairs = list(zip(test_images, test_labels))
 
-    train_set, test_set = train_test_split(pairs, test_size=user_config.test_size, shuffle=True)
+    train_set, valid_set = train_test_split(train_pairs, test_size=user_config.val_size, shuffle=True)
+
+    for dir_path in [
+        kitti_config.processed_yolo_train_path,
+        kitti_config.processed_yolo_valid_path,
+        kitti_config.processed_yolo_test_path,
+    ]:
+        os.makedirs(dir_path, exist_ok=True)
 
     for image_path, label_path in tqdm(train_set, desc="Preparing YOLO training data"):
-        target_image_path = train_dir_path / image_path.name
-        target_label_path = train_dir_path / label_path.name
+        target_image_path = kitti_config.processed_yolo_train_path / image_path.name
+        target_label_path = kitti_config.processed_yolo_train_path / label_path.name
         shutil.copy(image_path, target_image_path)
         shutil.copy(label_path, target_label_path)
         remove_distance_label(target_label_path)
 
-    print("[2/4] YOLO training data processed")
+    print("[3/6] YOLO training data processed")
 
-    for image_path, label_path in tqdm(test_set, desc="Preparing YOLO test data"):
-        target_image_path = test_dir_path / image_path.name
-        target_label_path = test_dir_path / label_path.name
+    for image_path, label_path in tqdm(valid_set, desc="Preparing YOLO validation data"):
+        target_image_path = kitti_config.processed_yolo_valid_path / image_path.name
+        target_label_path = kitti_config.processed_yolo_valid_path / label_path.name
         shutil.copy(image_path, target_image_path)
         shutil.copy(label_path, target_label_path)
         remove_distance_label(target_label_path)
 
-    print("[3/4] YOLO test data processed")
+    print("[4/6] YOLO validation data processed")
+
+    for image_path, label_path in tqdm(test_pairs, desc="Preparing YOLO test data"):
+        target_image_path = kitti_config.processed_yolo_test_path / image_path.name
+        target_label_path = kitti_config.processed_yolo_test_path / label_path.name
+        shutil.copy(image_path, target_image_path)
+        shutil.copy(label_path, target_label_path)
+        remove_distance_label(target_label_path)
+
+    print("[5/6] YOLO test data processed")
 
     create_yolo_yaml_file(classes=classes, kitti_config=kitti_config)
-    print("[4/4] YOLO config file processed")
+    print("[6/6] YOLO config file processed")
+
+
+def create_yolo_yaml_file(classes: List[str], kitti_config: KittiTrainConfig):
+    yaml_file = "names:\n"
+    yaml_file += "\n".join(f"- {c}" for c in classes)
+    yaml_file += f"\nnc: {len(classes)}"
+    yaml_file += f"\ntrain: train\nval: valid\ntest: test"
+    with open(kitti_config.processed_yolo_config_file_path, "w") as f:
+        f.write(yaml_file)
+
+
+def split_dataset(kitti_config: KittiTrainConfig, user_config: UserKittiYoloConfig):
+    images = sorted(list(kitti_config.raw_imgs_path.glob("*.png")))
+    labels = sorted(list(kitti_config.raw_labels_path.glob("*.txt")))
+    calib = sorted(list(kitti_config.raw_calib_path.glob("*.txt")))
+
+    data = list(zip(images, labels, calib))
+    train_data, test_data = train_test_split(data, test_size=user_config.test_size, shuffle=True)
+
+    train_dir = kitti_config.dir_path / "train"
+    test_dir = kitti_config.dir_path / "test"
+
+    for subset, subset_name in [(train_data, train_dir), (test_data, test_dir)]:
+        image_dir = subset_name / "image_2"
+        label_dir = subset_name / "label_2"
+        calib_dir = subset_name / "calib"
+
+        os.makedirs(image_dir, exist_ok=True)
+        os.makedirs(label_dir, exist_ok=True)
+        os.makedirs(calib_dir, exist_ok=True)
+
+        for img, lbl, cal in tqdm(subset, desc=f"Moving {subset_name}", total=len(subset)):
+            shutil.copy(img, image_dir / img.name)
+            shutil.copy(lbl, label_dir / lbl.name)
+            shutil.copy(cal, calib_dir / cal.name)
+
+    print("[1/6] Original KITTI data split into train and test sets")
 
 
 def main():
     kitti_config = get_kitti_train_config(path=KITTI_DETECTION_TRAIN_PATH)
     user_config = read_user_config()
 
+    split_dataset(kitti_config=kitti_config, user_config=user_config)
     preprocess_kitti_data(kitti_config=kitti_config, user_config=user_config)
     prepare_yolo_data(kitti_config=kitti_config, user_config=user_config)
 
