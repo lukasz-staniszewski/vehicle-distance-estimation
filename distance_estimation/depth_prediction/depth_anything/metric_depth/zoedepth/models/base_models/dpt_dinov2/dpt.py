@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .blocks import FeatureFusionBlock, _make_scratch
-import torch.nn.functional as F
 
 
 def _make_fusion_block(features, use_bn, size = None):
@@ -137,7 +137,7 @@ class DPT_DINOv2(nn.Module):
 
         torch.manual_seed(1)
         
-        self.pretrained = torch.hub.load('../torchhub/facebookresearch_dinov2_main', 'dinov2_{:}14'.format(encoder), source='local', pretrained=False)
+        self.pretrained = torch.hub.load('distance_estimation/depth_prediction/depth_anything/torchhub/facebookresearch_dinov2_main', 'dinov2_{:}14'.format(encoder), source='local', pretrained=False)
         
         dim = self.pretrained.blocks[0].attn.qkv.in_features
         
