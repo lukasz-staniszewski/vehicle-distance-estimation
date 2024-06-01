@@ -328,24 +328,34 @@ class DepthAnythingCore(nn.Module):
         self.remove_hooks()
 
     def set_output_channels(self):
-        self.output_channels = [256, 256, 256, 256, 256]
+        # using Depth-Anything-ViT-S
+        self.output_channels = [64, 64, 64, 64, 64]
+        # using Depth-Anything-ViT-B
+        # self.output_channels = [128, 128, 128, 128, 128]
+        # using Depth-Anything-ViT-L
+        # self.output_channels = [256, 256, 256, 256, 256]
 
     @staticmethod
     def build(midas_model_type="dinov2_large", train_midas=False, use_pretrained_midas=True, fetch_features=False, freeze_bn=True, force_keep_ar=False, force_reload=False, **kwargs):
         if "img_size" in kwargs:
             kwargs = DepthAnythingCore.parse_img_size(kwargs)
         img_size = kwargs.pop("img_size", [384, 384])
-        
-        depth_anything = DPT_DINOv2(out_channels=[256, 512, 1024, 1024], use_clstoken=False)
-        
-        state_dict = torch.load('./checkpoints/depth_anything_vitl14.pth', map_location='cpu')
+
+        # using Depth-Anything-ViT-S
+        depth_anything = DPT_DINOv2(encoder='vits', features=64, out_channels=[48, 96, 192, 384], use_clstoken=False) 
+        state_dict = torch.load('./checkpoints/depth_anything_vits14.pth', map_location='cpu')
+
+        # using Depth-Anything-ViT-B
+        # depth_anything = DPT_DINOv2(encoder='vitb', features=128, out_channels=[96, 192, 384, 768], use_clstoken=False) 
+        # state_dict = torch.load('./checkpoints/depth_anything_vitb14.pth', map_location='cpu')
+
+        # using Depth-Anything-ViT-L
+        # depth_anything = DPT_DINOv2(out_channels=[256, 512, 1024, 1024], use_clstoken=False)
+        # state_dict = torch.load('./checkpoints/depth_anything_vitl14.pth', map_location='cpu')
         depth_anything.load_state_dict(state_dict)
-        
         kwargs.update({'keep_aspect_ratio': force_keep_ar})
-        
         depth_anything_core = DepthAnythingCore(depth_anything, trainable=train_midas, fetch_features=fetch_features,
                                freeze_bn=freeze_bn, img_size=img_size, **kwargs)
-        
         depth_anything_core.set_output_channels()
         return depth_anything_core
 

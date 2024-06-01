@@ -89,7 +89,7 @@ def main_worker(gpu, ngpus_per_node, config):
 
         model = build_model(config)
         # print(model)
-            
+
         model = load_ckpt(config, model)
         model = parallelize(config, model)
 

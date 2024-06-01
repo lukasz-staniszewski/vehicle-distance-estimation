@@ -30,7 +30,7 @@ torch_tf = Compose(
 
 
 def load_model():
-    return DepthAnything.from_pretrained("LiheYoung/depth_anything_vitl14").to(DEVICE).eval()
+    return DepthAnything.from_pretrained("LiheYoung/depth_anything_vits14").to(DEVICE).eval()
 
 
 def path2tensor(path):
