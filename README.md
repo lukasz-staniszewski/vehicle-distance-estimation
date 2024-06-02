@@ -244,9 +244,9 @@ python distance_estimation/distance_prediction/predict.py -depvt large  -depmp l
 
 | Distance prediction method  | Size (MB) | GPU Speed (FPS) | CPU Speed (FPS)  |
 |-----------------------------|-----------|-----------------|------------------|
-| Height based                | 6         | 88.87           |         TODO     |
-| Depth based (small)         | 102       | 25.42           |         TODO     |
-| Depth based (large)         | 1306      | 10.30           |         TODO     |
+| Height based                | 6         | 88.87           | 25.20            |
+| Depth based (small)         | 102       | 25.42           |  2.33            |
+| Depth based (large)         | 1306      | 10.30           |  0.42            |
 
 ## TODO
 

@@ -46,10 +46,10 @@ class DistancePredictor:
         ]
 
     @classmethod
-    def load(cls, vit_type: str, depth_model_path: Path, detection_model_path: Path, strategy: str) -> "DistancePredictor":
+    def load(cls, vit_type: str, depth_model_path: Path, detection_model_path: Path, strategy: str, run_multithreaded: bool) -> "DistancePredictor":
         yolo_model = load_yolo_model(model_path=detection_model_path)
         depth_model = load_depth_model( pretrained_resource=depth_model_path, vit_encoder_type=vit_type)
-        return cls(detection_model=yolo_model, depth_model=depth_model, strategy=strategy)
+        return cls(detection_model=yolo_model, depth_model=depth_model, strategy=strategy, run_multithreaded=run_multithreaded)
 
 
 def main(args):
