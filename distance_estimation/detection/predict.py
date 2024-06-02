@@ -16,9 +16,6 @@ class Detection:
     class_idx: torch.Tensor
     class_name: str
 
-    def get_pixel_height(self) -> torch.Tensor:
-        return self.xyxy[3] - self.xyxy[1]
-
 
 def load_yolo_model(model_path: Path) -> YOLO:
     return YOLO(model=model_path, task="detect")
@@ -27,15 +24,15 @@ def load_yolo_model(model_path: Path) -> YOLO:
 def predict_detection(model: YOLO, model_inp: Image.Image) -> List[Detection]:
     yolo_out = model(model_inp, verbose=False)
 
-    dets = []
     img_detection = yolo_out[0].cpu()
+    boxes = img_detection.boxes
 
-    n_bboxes = img_detection.boxes.cls.shape[0]
-    for bbox_idx in range(n_bboxes):
-        cls_idx = img_detection.boxes.cls[bbox_idx].int()
-        dets.append(Detection(xyxy=img_detection.boxes.xyxy[bbox_idx], class_idx=cls_idx, class_name=KITTI_CLASS_NAMES[cls_idx.item()]))
+    detections = [
+        Detection(xyxy=boxes.xyxy[bbox_idx], class_idx=cls_idx, class_name=KITTI_CLASS_NAMES[cls_idx.item()])
+        for bbox_idx, cls_idx in enumerate(boxes.cls.int())
+    ]
 
-    return dets
+    return detections
 
 
 def draw_detection_bbox(image: Image.Image, detections: List[Detection]) -> Image.Image:

@@ -22,9 +22,9 @@
 
 # File author: Shariq Farooq Bhat
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 from torchvision.transforms import Normalize
 from zoedepth.models.base_models.dpt_dinov2.dpt import DPT_DINOv2
 
@@ -191,7 +191,7 @@ class PrepForMidas(object):
 
 class DepthAnythingCore(nn.Module):
     def __init__(self, midas, trainable=False, fetch_features=True, layer_names=('out_conv', 'l4_rn', 'r4', 'r3', 'r2', 'r1'), freeze_bn=False, keep_aspect_ratio=True,
-                 img_size=384, **kwargs):
+                 img_size=384, vit_encoder_type: str = "large", **kwargs):
         """Midas Base model used for multi-scale feature extraction.
 
         Args:
@@ -213,6 +213,7 @@ class DepthAnythingCore(nn.Module):
         self.handles = []
         # self.layer_names = ['out_conv','l4_rn', 'r4', 'r3', 'r2', 'r1']
         self.layer_names = layer_names
+        self.vit_encoder_type = vit_encoder_type
 
         self.set_trainable(trainable)
         self.set_fetch_features(fetch_features)
@@ -328,24 +329,43 @@ class DepthAnythingCore(nn.Module):
         self.remove_hooks()
 
     def set_output_channels(self):
-        self.output_channels = [256, 256, 256, 256, 256]
+        match self.vit_encoder_type:
+            case "small":
+                # using Depth-Anything-ViT-S
+                self.output_channels = [64, 64, 64, 64, 64]
+            case "big":
+                # using Depth-Anything-ViT-B
+                self.output_channels = [128, 128, 128, 128, 128]
+            case "large":
+                # using Depth-Anything-ViT-L
+                self.output_channels = [256, 256, 256, 256, 256]
+            case _:
+                raise NotImplementedError()
 
     @staticmethod
-    def build(midas_model_type="dinov2_large", train_midas=False, use_pretrained_midas=True, fetch_features=False, freeze_bn=True, force_keep_ar=False, force_reload=False, **kwargs):
+    def build(midas_model_type="dinov2_large", train_midas=False, use_pretrained_midas=True, fetch_features=False, freeze_bn=True, force_keep_ar=False, force_reload=False, vit_encoder_type: str = "large", **kwargs):
         if "img_size" in kwargs:
             kwargs = DepthAnythingCore.parse_img_size(kwargs)
         img_size = kwargs.pop("img_size", [384, 384])
-        
-        depth_anything = DPT_DINOv2(out_channels=[256, 512, 1024, 1024], use_clstoken=False)
-        
-        state_dict = torch.load('./checkpoints/depth_anything_vitl14.pth', map_location='cpu')
+        if vit_encoder_type == "small":
+            # using Depth-Anything-ViT-S
+            depth_anything = DPT_DINOv2(encoder='vits', features=64, out_channels=[48, 96, 192, 384], use_clstoken=False) 
+            state_dict = torch.load('./checkpoints/depth_anything_vits14.pth', map_location='cpu')
+        elif vit_encoder_type == "big":
+            # using Depth-Anything-ViT-B
+            depth_anything = DPT_DINOv2(encoder='vitb', features=128, out_channels=[96, 192, 384, 768], use_clstoken=False) 
+            state_dict = torch.load('./checkpoints/depth_anything_vitb14.pth', map_location='cpu')
+        elif vit_encoder_type == "large":
+            # using Depth-Anything-ViT-L
+            depth_anything = DPT_DINOv2(out_channels=[256, 512, 1024, 1024], use_clstoken=False)
+            state_dict = torch.load('./checkpoints/depth_anything_vitl14.pth', map_location='cpu')
+        else:
+            raise NotImplementedError()
+
         depth_anything.load_state_dict(state_dict)
-        
         kwargs.update({'keep_aspect_ratio': force_keep_ar})
-        
         depth_anything_core = DepthAnythingCore(depth_anything, trainable=train_midas, fetch_features=fetch_features,
-                               freeze_bn=freeze_bn, img_size=img_size, **kwargs)
-        
+                               freeze_bn=freeze_bn, img_size=img_size, vit_encoder_type=vit_encoder_type, **kwargs)
         depth_anything_core.set_output_channels()
         return depth_anything_core
 

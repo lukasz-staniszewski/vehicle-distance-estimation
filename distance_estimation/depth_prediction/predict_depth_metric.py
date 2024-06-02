@@ -14,9 +14,10 @@ DATASET = "kitti"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def load_depth_model(model_name, pretrained_resource):
-    config = get_config(model_name, "eval", DATASET)
+def load_depth_model(pretrained_resource, vit_encoder_type):
+    config = get_config("zoedepth", "eval", DATASET)
     config.pretrained_resource = pretrained_resource
+    config.vit_encoder_type = vit_encoder_type
     model = build_model(config).to(DEVICE)
     model.eval()
     return model
@@ -25,18 +26,15 @@ def load_depth_model(model_name, pretrained_resource):
 def process_image(model, image):
     original_width, original_height = image.size
     image_tensor = transforms.ToTensor()(image).unsqueeze(0).to(DEVICE)
-
-    pred = model(image_tensor, dataset=DATASET)
-    if isinstance(pred, dict):
-        pred = pred.get("metric_depth", pred.get("out"))
-    elif isinstance(pred, (list, tuple)):
-        pred = pred[-1]
-    pred = pred.squeeze().detach().cpu()
-
-    pred = pred.unsqueeze(0).unsqueeze(0)
-    pred_resized = F.interpolate(pred, size=(original_height, original_width), mode="nearest")
-    pred_resized = pred_resized[0, 0].numpy()
-    return pred_resized
+    with torch.inference_mode():
+        pred = model(image_tensor, dataset=DATASET)
+        if isinstance(pred, dict):
+            pred = pred.get("metric_depth", pred.get("out"))
+        elif isinstance(pred, (list, tuple)):
+            pred = pred[-1]
+        pred_resized = F.interpolate(pred, size=(original_height, original_width), mode="nearest")
+        pred_resized = pred_resized[0, 0].cpu().numpy()
+        return pred_resized
 
 
 def save_image(depth_prediction, out_path):
@@ -45,18 +43,17 @@ def save_image(depth_prediction, out_path):
     resized_pred.save(out_path)
 
 
-def main(model_name, pretrained_resource, inp_path, out_path):
-    model = load_depth_model(model_name, pretrained_resource)
+def main(args):
+    model = load_depth_model(args.pretrained_resource, args.vit_type)
 
-    image = Image.open(inp_path).convert("RGB")
+    image = Image.open(args.img_in).convert("RGB")
     output = process_image(model, image)
 
-    save_image(output, out_path)
+    save_image(output, args.img_out)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model", type=str, default="zoedepth", help="Name of the model to test")
     parser.add_argument(
         "-p",
         "--pretrained_resource",
@@ -64,8 +61,9 @@ if __name__ == "__main__":
         default="local::./checkpoints/depth_anything_metric_depth_indoor.pt",
         help="Pretrained resource to use for fetching weights.",
     )
+    parser.add_argument("--vit-type", type=str, choices=["small", "big", "large"])
     parser.add_argument("--img-in", type=str)
     parser.add_argument("--img-out", type=str, default="metric_depth.png")
 
     args = parser.parse_args()
-    main(args.model, args.pretrained_resource, args.img_in, args.img_out)
+    main(args)

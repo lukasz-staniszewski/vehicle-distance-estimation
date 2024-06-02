@@ -159,7 +159,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-data/
+data/*/*
 experiments/
 runs/**
 res/detection/model.pt
@@ -168,3 +168,5 @@ res/samples/*
 checkpoints/*.pt*
 !distance_estimation/depth_prediction/depth_anything/metric_depth/zoedepth/data/
 !distance_estimation/depth_prediction/depth_anything/torchhub/facebookresearch_dinov2_main/dinov2/data
+!data/depth/download_kitti_depth.sh
+wandb

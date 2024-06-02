@@ -29,9 +29,16 @@ torch_tf = Compose(
 )
 
 
-def load_model():
-    return DepthAnything.from_pretrained("LiheYoung/depth_anything_vitl14").to(DEVICE).eval()
-
+def load_model(vit_type: str):
+    match vit_type:
+        case "small":
+            return DepthAnything.from_pretrained("LiheYoung/depth_anything_vits14").to(DEVICE).eval()
+        case "big":
+            return DepthAnything.from_pretrained("LiheYoung/depth_anything_vitb14").to(DEVICE).eval()
+        case "large":
+            return DepthAnything.from_pretrained("LiheYoung/depth_anything_vitl14").to(DEVICE).eval()
+        case _:
+            raise NotImplementedError("Allowed vit types: small, big, large")
 
 def path2tensor(path):
     raw_image = cv2.imread(path)
@@ -63,7 +70,7 @@ def save_predict(depth, in_filename, outdir):
 
 
 def main(args):
-    depth_anything = load_model()
+    depth_anything = load_model(vit_type=args.vit_type)
     image, h, w = path2tensor(args.img_path)
     depth = predict(depth_anything, image, w, h)
     save_predict(depth, args.img_path, args.outdir)
@@ -72,6 +79,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--img-path", type=str)
+    parser.add_argument("--vit-type", type=str, choices=["small", "big", "large"], default="small")
     parser.add_argument("--outdir", type=str, default="./vis_depth")
 
     args = parser.parse_args()
