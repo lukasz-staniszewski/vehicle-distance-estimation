@@ -1,12 +1,27 @@
 import os
+from copy import deepcopy
 
 import streamlit as st
 from PIL import Image
 from ultralytics import YOLO
 
-DETECTION_MODEL_PATH = "res/detection/model.pt"
+from distance_estimation.depth_prediction.predict_depth_metric import load_depth_model
+from distance_estimation.distance_prediction.helpers import DistanceDetection, draw_dist_detection_bbox
+from distance_estimation.distance_prediction.predict import DistancePredictor
 
-detection_model = YOLO(DETECTION_MODEL_PATH)
+DETECTION_MODEL_PATH = "checkpoints/yolo_best.pt"
+DEPTH_MODEL_PATH = "local::./checkpoints/zoedepth-depthanything-smallvit-10epochs_best.pt"
+VIT_TYPE = "small"
+STRATEGY = "bbox_median"
+
+predictor = DistancePredictor.load(
+    vit_type=VIT_TYPE,
+    depth_model_path=DEPTH_MODEL_PATH,
+    detection_model_path=DETECTION_MODEL_PATH,
+    strategy=STRATEGY,
+    run_multithreaded=False
+)
+print("Models loaded...")
 
 
 def load_image(image_file):
@@ -18,13 +33,14 @@ def save_image(image, filename):
     image.save(filename)
 
 
-def process_image(image_path):
-    results = detection_model([image_path])
+def process_image(image):
+    detections = predictor.predict(image=image)
+    print("Detections:", detections)
+    img = draw_dist_detection_bbox(image=deepcopy(image), detections=detections)
+
     output_files = []
-    for i, result in enumerate(results):
-        output_filename = f"result_{i}.jpg"
-        result.save(filename=output_filename)
-        output_files.append(output_filename)
+    save_image(img, "result.jpg")
+    output_files.append("result.jpg")
     return output_files
 
 
@@ -38,16 +54,16 @@ if uploaded_file is not None:
     st.write("")
     st.write("Detecting...")
 
-    file_path = f"temp_{uploaded_file.name}"
-    save_image(image, file_path)
+    # file_path = f"temp_{uploaded_file.name}"
+    # save_image(image, file_path)
 
-    output_files = process_image(file_path)
+    output_files = process_image(image)
     for file in output_files:
         st.image(file, caption="Processed Image with Detected Vehicles.", use_column_width=True)
 
         with open(file, "rb") as img_file:
             btn = st.download_button(label="Download Image", data=img_file, file_name=file, mime="image/jpeg")
 
-    os.remove(file_path)
+    # os.remove(file_path)
     for file in output_files:
         os.remove(file)
