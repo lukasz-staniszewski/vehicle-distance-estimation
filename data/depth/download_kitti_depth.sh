@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Run in data/depth/ directory!!!
+
 files=(2011_09_26_calib.zip
 2011_09_26_drive_0001
 2011_09_26_drive_0002
@@ -176,3 +178,15 @@ for i in ${files[@]}; do
         unzip -o $shortname
         rm $shortname
 done
+
+mkdir -p raw
+mv 2011* raw/
+
+echo "Downloading gt depth masks"
+wget https://s3.eu-central-1.amazonaws.com/avg-kitti/data_depth_annotated.zip
+mkdir -p masks
+unzip -q data_depth_annotated.zip
+mv train/* masks/
+mv val/* masks/
+rm -rf train/
+rm -rf val/

@@ -18,8 +18,9 @@ class DummyDistancePredictor:
         self.model = model
 
     def predict(self, detection: Detection, focal_length: float) -> DistanceDetection:
-        real_height = self.model[str(detection.class_idx.item())]
-        pixel_height = detection.get_pixel_height()
+        class_idx = detection.class_idx.item()
+        real_height = self.model[str(class_idx)]
+        pixel_height = (detection.xyxy[3] - detection.xyxy[1]).item()
         distance = focal_length * real_height / pixel_height
         return DistanceDetection(**asdict(detection), distance=distance)
 

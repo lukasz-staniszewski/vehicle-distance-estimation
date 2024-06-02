@@ -80,12 +80,13 @@ def load_ckpt(config, model, checkpoint_dir="./checkpoints", ckpt_type="best"):
     return model
 
 
-def main_worker(gpu, ngpus_per_node, config):
+def main_worker(gpu, ngpus_per_node, config, vit_encoder_type):
     try:
         seed = config.seed if 'seed' in config and config.seed else 43
         fix_random_seed(seed)
 
         config.gpu = gpu
+        config.vit_encoder_type = vit_encoder_type
 
         model = build_model(config)
         # print(model)
@@ -116,6 +117,7 @@ if __name__ == '__main__':
     parser.add_argument("-m", "--model", type=str, default="synunet")
     parser.add_argument("-d", "--dataset", type=str, default='nyu')
     parser.add_argument("--trainer", type=str, default=None)
+    parser.add_argument("-vet", "--vit-encoder-type", type=str, choices=["small", "big", "large"])
 
     args, unknown_args = parser.parse_known_args()
     overwrite_kwargs = parse_unknown(unknown_args)
@@ -169,8 +171,8 @@ if __name__ == '__main__':
     if config.distributed:
         config.world_size = ngpus_per_node * config.world_size
         mp.spawn(main_worker, nprocs=ngpus_per_node,
-                 args=(ngpus_per_node, config))
+                 args=(ngpus_per_node, config, args.vit_encoder_type))
     else:
         if ngpus_per_node == 1:
             config.gpu = 0
-        main_worker(config.gpu, ngpus_per_node, config)
+        main_worker(config.gpu, ngpus_per_node, config, args.vit_encoder_type)

@@ -246,12 +246,11 @@ class ZoeDepth(DepthModel):
         return param_conf
 
     @staticmethod
-    def build(midas_model_type="DPT_BEiT_L_384", pretrained_resource=None, use_pretrained_midas=False, train_midas=False, freeze_midas_bn=True, **kwargs):
+    def build(midas_model_type="DPT_BEiT_L_384", pretrained_resource=None, use_pretrained_midas=False, train_midas=False, freeze_midas_bn=True, vit_encoder_type: str = "large", **kwargs):
         # core = MidasCore.build(midas_model_type=midas_model_type, use_pretrained_midas=use_pretrained_midas,
         #                        train_midas=train_midas, fetch_features=True, freeze_bn=freeze_midas_bn, **kwargs)
-        
         core = DepthAnythingCore.build(midas_model_type=midas_model_type, use_pretrained_midas=use_pretrained_midas,
-                                       train_midas=train_midas, fetch_features=True, freeze_bn=freeze_midas_bn, **kwargs)
+                                       train_midas=train_midas, fetch_features=True, freeze_bn=freeze_midas_bn, vit_encoder_type=vit_encoder_type, **kwargs)
         
         model = ZoeDepth(core, **kwargs)
         if pretrained_resource:

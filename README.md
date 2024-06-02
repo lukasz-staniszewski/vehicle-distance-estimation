@@ -33,6 +33,22 @@
                         |-------calib
     ```
 
+3) [Optional] To train Metric Depth-Anything model, download KITTI depth data by using [this script](data/depth/download_kitti_depth.sh). You will end up having such directories:
+
+    ```sh
+    . (root directory)
+    |-data
+        |---depth
+                |-----raw
+                        |-------2011_09_26
+                        |-------2011_09_28
+                        |-------...
+                |-----masks
+                        |-------2011_09_26_drive_0001_sync
+                        |-------2011_09_26_drive_0002_sync
+                        |-------...
+    ```
+
 ### Data preprocessing
 
 1) Go to root directory (vehicle-distance-estimation/)
@@ -77,7 +93,9 @@ python distance_estimation/detection/predict.py -mp experiments/detection/yolov8
 
 ![yolo_out](https://github.com/lukasz-staniszewski/focus-convolutional-neural-network/assets/59453698/53627712-99a2-454c-aab1-b54108b9d7b8)
 
-## IV. Dummy Distance Prediction (from Bounding-Boxes)
+## IV. Height based distance prediction
+
+Model: YOLOv8 Object Detection + distance prediction based on object height
 
 ### Create model
 
@@ -120,22 +138,34 @@ python distance_estimation/dummy_distance_prediction/ddp_predict.py -detmp exper
 Download models to [checkpoints dir](checkpoints/):
 
 ```bash
+# large
 wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpoints/depth_anything_vitl14.pth
-wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpoints/depth_anything_vits14.pth
-
 wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpoints_metric_depth/depth_anything_metric_depth_outdoor.pt
+
+# small
+wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpoints/depth_anything_vits14.pth
+TODO
 ```
 
 ### Relative depth prediction
 
 ```bash
-python distance_estimation/depth_prediction/predict_depth_relative.py --img-path data/detection/training/image_2/000003.png  --outdir ./
+# large
+python distance_estimation/depth_prediction/predict_depth_relative.py --img-path data/detection/training/image_2/000003.png  --outdir ./ --vit-type large
 ```
 
 ### Metric depth prediction
 
+Training:
+
 ```bash
-python distance_estimation/depth_prediction/predict_depth_metric.py --img-in data/detection/training/image_2/000003.png -p local::./checkpoints/depth_anything_metric_small_kitti_best.pt
+python distance_estimation/depth_prediction/depth_anything/metric_depth/train_mono.py -m zoedepth -d kitti --pretrained_resource="" --data_path ./data/depth/raw/ --gt_path ./data/depth/masks/ --gt_path_eval ./data/depth/masks/ --data_path_eval ./data/depth/raw/ --filenames_file ./distance_estimation/depth_prediction/depth_anything/metric_depth/train_test_inputs/kitti_eigen_train_files_with_gt.txt --filenames_file_eval ./distance_estimation/depth_prediction/depth_anything/metric_depth/train_test_inputs/kitti_eigen_test_files_with_gt.txt --workers 8 --vit-encoder-type small --epochs 10
+```
+
+Prediction:
+
+```bash
+python distance_estimation/depth_prediction/predict_depth_metric.py --vit-type small --img-in data/detection/training/image_2/000003.png --pretrained_resource local::./checkpoints/zoedepth-depthanything-smallvit-10epochs_best.pt
 ```
 
 ## VI. Depth based distance prediction
@@ -145,7 +175,11 @@ Model: YOLOv8 Object Detection + Depth-Anything Metric Depth Estimation
 Run sample prediction:
 
 ```bash
-python distance_estimation/distance_prediction/predict.py -depmn zoedepth -depmp local::./checkpoints/depth_anything_metric_small_kitti_best.pt -detmp experiments/detection/yolov8-kitti-detection/train/weights/best.pt -s bbox_median -ip data/detection/training/image_2/000003.png -op dist.png
+# small
+python distance_estimation/distance_prediction/predict.py -depvt small  -depmp local::./checkpoints/zoedepth-depthanything-smallvit-10epochs_best.pt -detmp experiments/detection/yolov8-kitti-detection/train/weights/best.pt -s bbox_median -ip data/detection/training/image_2/000003.png -op dist.png
+
+# large
+python distance_estimation/distance_prediction/predict.py -depvt large  -depmp local::./checkpoints/depth_anything_metric_depth_outdoor.pt -detmp experiments/detection/yolov8-kitti-detection/train/weights/best.pt -s bbox_median -ip data/detection/training/image_2/000003.png -op dist.png
 ```
 
 ![distance example](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/7e380959-6663-48d8-9df6-e33a3c297cd9)
@@ -167,14 +201,14 @@ python distance_estimation/distance_prediction/predict.py -depmn zoedepth -depmp
 | -  bbox mean                 | 4.412     | 2.957     | 1.943     | 3.325      | 4.149     |
 | -  bbox percentile           | 4.869     | 3.565     | 2.094     | 4.265      | 4.553     |
 | ***Depth based (small)***    |           |           |           |            |           |
-| -  centered min              | 6.333     | 4.828     | 2.667     | 5.715      | 6.913     |
-| -  centered mean             | 4.396     | 3.063     | 1.654     | 3.419      | 5.415     |
-| -  centered median           | 4.365     | 3.064     | 1.623     | 3.440      | 5.417     |
-| -  centered percentile       | 4.881     | 3.668     | 1.984     | 4.235      | 5.849     |
-| -  bbox min                  | 8.545     | 6.671     | 3.551     | 7.981      | 9.555     |
-| -  bbox median               | 4.369     | 2.777     | 1.364     | 3.133      | 5.146     |
-| -  bbox mean                 | 4.969     | 3.201     | 1.909     | 3.541      | 5.301     |
-| -  bbox percentile           | 5.402     | 3.971     | 2.116     | 4.652      | 6.123     |
+| -  centered min              | 6.156     | 4.663     | 2.653     | 5.539      | 6.376     |
+| -  centered mean             | 4.121     | 2.908     | 1.640     | 3.235      | 4.988     |
+| -  centered median           | 4.098     | 2.903     | 1.593     | 3.254      | 5.002     |
+| -  centered percentile       | 4.669     | 3.509     | 1.960     | 4.061      | 5.375     |
+| -  bbox min                  | 8.312     | 6.495     | 3.535     | 7.820      | 8.860     |
+| -  bbox median               | 4.086     | 2.650     | 1.340     | 2.986      | 4.819     |
+| -  bbox mean                 | 4.735     | 3.172     | 1.922     | 3.519      | 5.120     |
+| -  bbox percentile           | 5.209     | 3.823     | 2.094     | 4.489      | 5.684     |
 
 ### Per class
 
@@ -191,22 +225,22 @@ python distance_estimation/distance_prediction/predict.py -depmn zoedepth -depmp
 | - bbox mean                 | 2.553     | 5.867       | 3.226     | 3.123           | 1.447              | 9.538     | **6.136** | 3.410     |
 | - bbox percentile           | 3.184     | 1.258       | 4.032     | 1.207           | 1.125              | 13.098    | 9.207     | 5.844     |
 | ***Depth based (small)***   |           |             |           |                 |                    |           |           |           |
-| - centered min              | 4.359     | 1.556       | 5.701     | 1.524           | 1.156              | 16.144    | 12.467    | 7.757     |
-| - centered mean             | 2.676     | 2.535       | 3.702     | 1.480           | 0.668              | 11.121    | 8.468     | 4.522     |
-| - centered median           | 2.692     | 2.133       | 3.915     | 1.473           | **0.565**          | 11.251    | 8.409     | 4.484     |
-| - centered percentile       | 3.287     | 1.718       | 4.169     | 1.396           | 0.752              | 12.417    | 9.498     | 5.810     |
-| - bbox min                  | 6.103     | 1.736       | 7.946     | 1.718           | 1.489              | 21.391    | 17.706    | 10.267    |
-| - bbox median               | 2.332     | 3.142       | 3.700     | 1.771           | 0.654              | 11.170    | 8.196     | 3.985     |
-| - bbox mean                 | 2.704     | 6.055       | 3.636     | 3.180           | 1.597              | 10.669    | 8.052     | 3.861     |
-| - bbox percentile           | 3.539     | 1.719       | 4.507     | 1.354           | 0.997              | 13.937    | 10.844    | 6.316     |
+| - centered min              | 4.201     | 1.514       | 5.470     | 1.476           | 1.224              | 15.796    | 11.975    | 7.590     |
+| - centered mean             | 2.557     | 2.424       | 3.383     | 1.443           | 0.626              | 10.474    | 7.812     | 4.257     |
+| - centered median           | 2.563     | 2.058       | 3.606     | 1.414           | **0.573**          | 10.600    | 7.739     | 4.234     |
+| - centered percentile       | 3.142     | 1.724       | 3.908     | 1.369           | 0.770              | 11.864    | 8.988     | 5.591     |
+| - bbox min                  | 5.950     | 1.753       | 7.774     | 1.690           | 1.542              | 21.134    | 16.536    | 10.119    |
+| - bbox median               | 2.257     | 3.026       | 3.424     | 1.684           | 0.642              | 10.545    | 7.395     | 3.706     |
+| - bbox mean                 | 2.737     | 6.151       | 3.368     | 3.141           | 1.537              | 10.075    | 7.225     | 3.646     |
+| - bbox percentile           | 3.406     | 1.760       | 4.310     | 1.335           | 1.033              | 13.476    | 10.244    | 6.104     |
 
 ### Size and speed
 
 | Distance prediction method  | Size (MB) | GPU Speed (FPS) | CPU Speed (FPS)  |
 |-----------------------------|-----------|-----------------|------------------|
-| Height based                | 6         | 47.36           |         TODO     |
-| Depth based (large)         | 102       | 8.32            |         TODO     |
-| Depth based (small)         | 1306      | 7.50            |         TODO     |
+| Height based                | 6         | 88.87           |         TODO     |
+| Depth based (small)         | 102       | 25.42           |         TODO     |
+| Depth based (large)         | 1306      | 10.30           |         TODO     |
 
 ## TODO
 

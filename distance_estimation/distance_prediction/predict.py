@@ -17,24 +17,28 @@ from distance_estimation.distance_prediction.strategies import bbox_depth
 
 class DistancePredictor:
 
-    def __init__(self, detection_model: YOLO, depth_model: DepthModel, strategy: str):
+    def __init__(self, detection_model: YOLO, depth_model: DepthModel, strategy: str, run_multithreaded: bool = False):
         self.detection_model = detection_model
         self.depth_model = depth_model
         self.strategy = strategy
+        self.run_multithreaded = run_multithreaded
 
     def predict(self, image: Image.Image) -> List[DistanceDetection]:
         def _get_detections(model, image):
             return predict_detection(model=model, model_inp=image)
 
         def _get_depth_mask(model, image):
-            depth_mask = process_image(model=model, image=image)
-            return np.array(depth_mask)
+            return process_image(model=model, image=image)
 
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            detections_future = executor.submit(_get_detections, self.detection_model, image)
-            depth_array_future = executor.submit(_get_depth_mask, self.depth_model, image)
-            detections: List[Detection] = detections_future.result()
-            depth_array: np.ndarray = depth_array_future.result()
+        if self.run_multithreaded:
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                detections_future = executor.submit(_get_detections, self.detection_model, image)
+                depth_array_future = executor.submit(_get_depth_mask, self.depth_model, image)
+                detections: List[Detection] = detections_future.result()
+                depth_array: np.ndarray = depth_array_future.result()
+        else:
+            detections = _get_detections(model=self.detection_model, image=image)
+            depth_array = _get_depth_mask(model=self.depth_model, image=image)
 
         return [
             DistanceDetection(**asdict(detection), distance=bbox_depth(depth_array, detection.xyxy, self.strategy))
@@ -42,15 +46,15 @@ class DistancePredictor:
         ]
 
     @classmethod
-    def load(cls, depth_model_name: str, depth_model_path: Path, detection_model_path: Path, strategy: str) -> "DistancePredictor":
+    def load(cls, vit_type: str, depth_model_path: Path, detection_model_path: Path, strategy: str) -> "DistancePredictor":
         yolo_model = load_yolo_model(model_path=detection_model_path)
-        depth_model = load_depth_model(model_name=depth_model_name, pretrained_resource=depth_model_path)
+        depth_model = load_depth_model( pretrained_resource=depth_model_path, vit_encoder_type=vit_type)
         return cls(detection_model=yolo_model, depth_model=depth_model, strategy=strategy)
 
 
 def main(args):
     predictor = DistancePredictor.load(
-        depth_model_name=args.depth_model_name,
+        vit_type=args.depth_vit_type,
         depth_model_path=args.depth_model_path,
         detection_model_path=args.detection_model_path,
         strategy=args.strategy,
@@ -71,7 +75,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = ArgumentParser("Detection predictor")
-    parser.add_argument("-depmn", "--depth-model-name", type=str, default="zoedepth", help="Name of the model to test")
+    parser.add_argument("-depvt", "--depth-vit-type", type=str, choices=["small", "large", "big"], help="Type of ViT model for Depth Estimation")
     parser.add_argument("-depmp", "--depth-model-path", type=str, required=True, help="Depth model .pt file path")
     parser.add_argument("-detmp", "--detection-model-path", type=str, required=True, help="YOLO model .pt file path")
     parser.add_argument(
