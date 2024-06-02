@@ -3,10 +3,8 @@ from copy import deepcopy
 
 import streamlit as st
 from PIL import Image
-from ultralytics import YOLO
 
-from distance_estimation.depth_prediction.predict_depth_metric import load_depth_model
-from distance_estimation.distance_prediction.helpers import DistanceDetection, draw_dist_detection_bbox
+from distance_estimation.distance_prediction.helpers import draw_dist_detection_bbox
 from distance_estimation.distance_prediction.predict import DistancePredictor
 
 DETECTION_MODEL_PATH = "checkpoints/yolo_best.pt"
@@ -54,9 +52,6 @@ if uploaded_file is not None:
     st.write("")
     st.write("Detecting...")
 
-    # file_path = f"temp_{uploaded_file.name}"
-    # save_image(image, file_path)
-
     output_files = process_image(image)
     for file in output_files:
         st.image(file, caption="Processed Image with Detected Vehicles.", use_column_width=True)
@@ -64,6 +59,5 @@ if uploaded_file is not None:
         with open(file, "rb") as img_file:
             btn = st.download_button(label="Download Image", data=img_file, file_name=file, mime="image/jpeg")
 
-    # os.remove(file_path)
     for file in output_files:
         os.remove(file)
