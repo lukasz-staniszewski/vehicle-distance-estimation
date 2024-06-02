@@ -61,6 +61,12 @@
 
 ## III. KITTI Object Detection with YOLOV8
 
+Checkpoint:
+
+```bash
+wget https://huggingface.co/lukasz-staniszewski/depth-anything-metric-kitti-small/resolve/main/yolo_best.pt
+```
+
 ### Train model
 
 ```bash
@@ -144,7 +150,7 @@ wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpo
 
 # small
 wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpoints/depth_anything_vits14.pth
-TODO
+wget https://huggingface.co/lukasz-staniszewski/depth-anything-metric-kitti-small/resolve/main/zoedepth-depthanything-smallvit-10epochs_best.pt
 ```
 
 ### Relative depth prediction
