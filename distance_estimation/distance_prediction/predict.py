@@ -58,6 +58,7 @@ def main(args):
         depth_model_path=args.depth_model_path,
         detection_model_path=args.detection_model_path,
         strategy=args.strategy,
+        run_multithreaded=False
     )
     image = Image.open(args.img_path)
     print("Models loaded...")

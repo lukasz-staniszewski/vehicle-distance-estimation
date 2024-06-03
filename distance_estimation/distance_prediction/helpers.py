@@ -25,10 +25,29 @@ class DistanceDetection(Detection):
 
 def draw_dist_detection_bbox(image: Image.Image, detections: List[DistanceDetection]) -> Image.Image:
     drawer = ImageDraw.Draw(image)
-    font = ImageFont.load_default(size=15)
+    try:
+        font = ImageFont.truetype("arial.ttf", size=15)
+    except IOError:
+        print("USING DEFAULT")
+        font = ImageFont.load_default()
+
     for detection in detections:
         bbox = detection.xyxy.tolist()
         drawer.rectangle(bbox, outline="red", width=3)
         text_on_bbox = f"{(detection.class_name).upper()}: {detection.distance:.02f} m"
-        drawer.text(xy=(bbox[0], bbox[1] - 20), text=text_on_bbox, fill="red", font=font)
+
+        text_bbox = drawer.textbbox((0, 0), text_on_bbox, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        text_position = (bbox[0], bbox[1] - text_height - 5)
+        background_position = (
+            text_position[0],
+            text_position[1],
+            text_position[0] + text_width + 1,
+            text_position[1] + text_height + 4,
+        )
+
+        drawer.rectangle(background_position, fill="white")
+        drawer.text(text_position, text=text_on_bbox, fill="red", font=font)
+
     return image
