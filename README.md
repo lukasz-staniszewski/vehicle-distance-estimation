@@ -135,7 +135,7 @@ Micro Mean Absolute Error: 2.4889 m
 python distance_estimation/dummy_distance_prediction/ddp_predict.py -detmp experiments/detection/yolov8-kitti-detection/train/weights/best.pt -ddpmp distance_estimation/dummy_distance_prediction/model.json  -ip data/detection/testing/image_2/000033.png  -op detect_dist_000033.png
 ```
 
-![dummy distance example](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/cf092a6b-ad4e-40d6-a570-4ab955aa8c78)
+![dummy distance example](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/b0bb7aea-6446-447b-8e3e-d3cac91003e8)
 
 ## V. Depth estimation
 
@@ -188,7 +188,7 @@ python distance_estimation/distance_prediction/predict.py -depvt small  -depmp l
 python distance_estimation/distance_prediction/predict.py -depvt large  -depmp local::./checkpoints/depth_anything_metric_depth_outdoor.pt -detmp experiments/detection/yolov8-kitti-detection/train/weights/best.pt -s bbox_median -ip data/detection/training/image_2/000003.png -op dist.png
 ```
 
-![distance example](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/7e380959-6663-48d8-9df6-e33a3c297cd9)
+![distance example](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/a1764d0f-310a-4ca8-9270-1b9ce73ee51d)
 
 ## VII. Benchmark results
 
@@ -248,6 +248,14 @@ python distance_estimation/distance_prediction/predict.py -depvt large  -depmp l
 | Depth based (small)         | 102       | 25.42           |  2.33            |
 | Depth based (large)         | 1306      | 10.30           |  0.42            |
 
-## TODO
+## VIII. Application
 
-1) Make depth prediction working with streamlit app
+Run application using streamlit:
+
+```bash
+streamlit run app.py
+```
+
+Application preview:
+
+![app preview](https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/12a09b75-fa99-4436-b2d3-2bf544affff9)
