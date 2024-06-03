@@ -1,6 +1,6 @@
 <div align="center">
 <h1 align="center">Vehicle Detection with Distance Estimation</h1>
-<img src="https://github.com/lukasz-staniszewski/quantized-depth-estimation/assets/59453698/4eff14cd-4a07-46b8-a009-8f1e77524d46" alt="banner">
+<img src="https://github.com/lukasz-staniszewski/vehicle-distance-estimation/assets/59453698/8b53243b-6913-405e-bf7e-604eafb56c26" alt="banner">
 </div>
 
 ## I. Environment setup
